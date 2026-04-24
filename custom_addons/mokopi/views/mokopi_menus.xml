@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="action_mokopi_kds_dashboard" model="ir.actions.client">
+        <field name="name">KDS</field>
+        <field name="tag">mokopi.kds.dashboard_action</field> 
+    </record>
+
+    <record id="action_mokopi_cashier_dashboard" model="ir.actions.client">
+        <field name="name">Kasir</field>
+        <field name="tag">mokopi.cashier.dashboard_action</field>
+    </record>
+
+    <record id="action_mokopi_orders" model="ir.actions.act_window">
+        <field name="name">Pesanan Aktif</field>
+        <field name="res_model">mokopi.order</field>
+        <field name="view_mode">tree</field>
+    </record>
+
+    <record id="action_mokopi_stock" model="ir.actions.act_window">
+        <field name="name">Kelola Stok</field>
+        <field name="res_model">mokopi.stock</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_mokopi_root"
+              name="Mokopi" 
+              sequence="5"/>
+
+    <menuitem id="menu_mokopi_kds_dashboard" 
+              name="KDS" 
+              parent="menu_mokopi_root" 
+              action="action_mokopi_kds_dashboard" 
+              sequence="10"/>
+    
+    <menuitem id="menu_mokopi_cashier_dashboard" 
+              name="Kasir" 
+              parent="menu_mokopi_root" 
+              action="action_mokopi_cashier_dashboard" 
+              sequence="20"/>
+
+    <menuitem id="menu_mokopi_orders"
+              name="Backend Orders"
+              parent="menu_mokopi_root"
+              action="action_mokopi_orders"
+              sequence="30"/>
+
+    <menuitem id="menu_mokopi_stock"
+              name="Backend Stock"
+              parent="menu_mokopi_root"
+              action="action_mokopi_stock"
+              sequence="40"/>
+    
+    <menuitem id="menu_mokopi_logs" 
+              name="Riwayat Sistem" 
+              parent="menu_mokopi_root" 
+              action="action_mokopi_order_log" 
+              sequence="50"/>
+
+</odoo>
