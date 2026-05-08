@@ -6,4 +6,6 @@ class MokopiStock(models.Model):
 
     name = fields.Char(string='Nama', required=True)
     stock_qty = fields.Integer(string='Stok Tersedia', default=0)
-    for_bar = fields.Boolean(string='Dibuat oleh Bar', default=False)
+    # for_bar = fields.Boolean(string='Dibuat oleh Bar', default=False)
+    for_bar = fields.Boolean(string='Untuk Bar', default=False)
+    price = fields.Integer(string='Harga (Rp)', default=0) #tambahan

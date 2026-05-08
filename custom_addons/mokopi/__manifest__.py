@@ -5,6 +5,7 @@
     'category': 'Point of Sale',
     'depends': ['base', 'web'],
     'data': [
+        'security/mokopi_kds_security.xml',
         'security/ir.model.access.csv',
         'views/mokopi_log_views.xml',
         'views/mokopi_menus.xml',
