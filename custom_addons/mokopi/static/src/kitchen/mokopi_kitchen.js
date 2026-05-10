@@ -83,6 +83,44 @@ export class KdsDashboard extends Component {
         );
     }
 
+    onDragStart(ev, order) {
+        this.draggedOrderId = order.id;
+    }
+
+    // Agar dapat drop elemen
+    onDragOver(ev) {
+        ev.preventDefault();
+    }
+
+    async onDrop(ev, targetOrder) {
+        ev.preventDefault();
+        
+        if (!this.draggedOrderId || this.draggedOrderId === targetOrder.id) {
+            return; // Batalkan jika urutan tidak berubah
+        }
+
+        const draggedIndex = this.state.orders.findIndex(o => o.id === this.draggedOrderId);
+        const targetIndex = this.state.orders.findIndex(o => o.id === targetOrder.id);
+
+        if (draggedIndex === -1 || targetIndex === -1) return;
+
+        // Pindahkan elemen pada array (update lokal dahulu, agar UI respon dengan instant)
+        const [draggedOrder] = this.state.orders.splice(draggedIndex, 1);
+        this.state.orders.splice(targetIndex, 0, draggedOrder);
+
+        // Beri urutan baru ke state lokal
+        const updatePromises = this.state.orders.map((o, index) => {
+            const newSeq = index + 1;
+            // Hanya memperbarui DB
+            return this.orm.write('mokopi.order', [o.id], { sequence: newSeq });
+        });
+
+        // 3. Eksekusi semua perubahan ke database tanpa memblokir UI terlalu lama
+        await Promise.all(updatePromises);
+
+        this.draggedOrderId = null;
+    }
+
     async updateOrderStatus(orderId, newStatus) {
         // 1. Write the new status to the database
         await this.orm.write('mokopi.order', [orderId], {

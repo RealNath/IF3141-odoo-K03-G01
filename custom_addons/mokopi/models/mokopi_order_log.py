@@ -14,3 +14,5 @@ class MokopiOrderLog(models.Model):
     action_type = fields.Char(string='Jenis Aksi', required=True)
     
     description = fields.Text(string='Deskripsi')
+    
+    total_price = fields.Float(string='Total Harga')
