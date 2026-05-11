@@ -7,17 +7,26 @@ import { useService } from "@web/core/utils/hooks";
 export class KdsDashboard extends Component {
     setup() {
         this.orm = useService("orm");
-        
+        this.userService = useService("user");
+
         this.state = useState({
             orders: [],
             menuItems: [],
             statusOptions: [],
             searchQuery: "",
+            hasAccess: true, // Asumsikan punya akses sampai terbukti sebaliknya
         });
 
         this.fsmRules = {};
 
         onWillStart(async () => {
+            // Lapis 3: Cek grup via JS untuk proteksi tambahan
+            const isKitchen = await this.userService.hasGroup("mokopi.group_kds_kitchen");
+            if (!isKitchen) {
+                this.state.hasAccess = false;
+                return;
+            }
+
             await Promise.all([
                 this.fetchOrders(),
                 this.fetchStock(),
@@ -30,7 +39,6 @@ export class KdsDashboard extends Component {
     async fetchOrders() {
         // Kitchen hanya melihat pesanan yang ditujukan untuk Kitchen (!for_bar)
         // Filter out finished/cancelled/rejected orders
-        // Fetch ordered by sequence to support drag and drop ordering
         const orders = (await this.orm.searchRead(
             'mokopi.order',
             [
@@ -63,30 +71,20 @@ export class KdsDashboard extends Component {
     // --- DRAG AND DROP METHODS ---
     onDragStart(ev, order) {
         this.draggedOrderId = order.id;
-        // setData is required for drag and drop to work in many browsers (Chrome/Firefox)
-        // It must be a string
         ev.dataTransfer.setData('text/plain', String(order.id));
         ev.dataTransfer.effectAllowed = 'move';
-
-        // Add visual feedback
         const card = ev.target.closest('.card');
-        if (card) {
-            card.style.opacity = "0.5";
-        }
+        if (card) card.style.opacity = "0.5";
     }
 
     onDragOver(ev) {
-        if (ev.preventDefault) {
-            ev.preventDefault();
-        }
+        if (ev.preventDefault) ev.preventDefault();
         ev.dataTransfer.dropEffect = 'move';
         return false;
     }
 
     async onDrop(ev, targetOrder) {
         ev.preventDefault();
-
-        // Reset opacity for all cards
         const allCards = document.querySelectorAll('.o_kds_dashboard .card');
         allCards.forEach(c => c.style.opacity = "1");
 
@@ -103,25 +101,20 @@ export class KdsDashboard extends Component {
             return;
         }
 
-        // Reorder locally for instant feedback
         const [draggedOrder] = this.state.orders.splice(draggedIndex, 1);
         this.state.orders.splice(targetIndex, 0, draggedOrder);
 
-        // Update sequence in background using the new mass-update method
         try {
             const orderIds = this.state.orders.map(o => o.id);
             await this.orm.call('mokopi.order', 'resequence_orders', [orderIds]);
         } catch (error) {
-            console.error("Failed to update sequence:", error);
             await this.fetchOrders();
         } finally {
             this.draggedOrderId = null;
         }
     }
-    // -----------------------------
 
     async fetchStock() {
-        // Kitchen hanya melihat stok makanan (non-bar)
         this.state.menuItems = await this.orm.searchRead(
             'mokopi.stock',
             [['for_bar', '=', false]],
@@ -139,55 +132,30 @@ export class KdsDashboard extends Component {
     }
 
     async fetchStatusOptions() {
-        const fields = await this.orm.call(
-            'mokopi.order',
-            'fields_get',
-            [['status']],
-        );
-        
+        const fields = await this.orm.call('mokopi.order', 'fields_get', [['status']]);
         this.state.statusOptions = fields.status.selection;
     }
 
     async fetchFsmRules() {
-        this.fsmRules = await this.orm.call(
-            'mokopi.order',
-            'get_fsm_transitions',
-            [],
-            { dashboard_type: 'kitchen' }
-        );
+        this.fsmRules = await this.orm.call('mokopi.order', 'get_fsm_transitions', [], { dashboard_type: 'kitchen' });
     }
 
     async updateOrderStatus(orderId, newStatus) {
-        await this.orm.write('mokopi.order', [orderId], {
-            status: newStatus
-        });
-        // Refresh orders and stock to show recovered quantities
-        await Promise.all([
-            this.fetchOrders(),
-            this.fetchStock()
-        ]);
+        await this.orm.write('mokopi.order', [orderId], { status: newStatus });
+        await Promise.all([this.fetchOrders(), this.fetchStock()]);
     }
 
     getValidOptionsForOrder(order) {
-        if (!this.fsmRules || !this.fsmRules['kitchen']) {
-            return [[order.status, order.status]];
-        }
-
-        // Kitchen always uses kitchen rules
+        if (!this.fsmRules || !this.fsmRules['kitchen']) return [[order.status, order.status]];
         const ruleSet = this.fsmRules['kitchen'] || {};
         const allowedKeys = ruleSet[order.status] || [order.status];
         return this.state.statusOptions.filter(option => allowedKeys.includes(option[0]));
     }
 
     get filteredMenuItems() {
-        if (!this.state.searchQuery) {
-            return this.state.menuItems;
-        }
-        
+        if (!this.state.searchQuery) return this.state.menuItems;
         const query = this.state.searchQuery.toLowerCase();
-        return this.state.menuItems.filter(item => 
-            item.name.toLowerCase().includes(query)
-        );
+        return this.state.menuItems.filter(item => item.name.toLowerCase().includes(query));
     }
 }
 

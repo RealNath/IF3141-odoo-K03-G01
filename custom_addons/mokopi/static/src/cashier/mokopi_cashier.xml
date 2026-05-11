@@ -77,7 +77,7 @@
                                     </div>
 
                                     <label class="form-label small fw-bold text-muted text-uppercase">Detail Keranjang</label>
-                                    <div class="flex-grow-1 overflow-auto border rounded bg-light p-3 mb-4">
+                                    <div class="flex-grow-1 overflow-auto border rounded bg-light p-3 mb-2">
                                         <t t-if="state.cart.lines.length === 0">
                                             <div class="text-center py-5 text-muted opacity-50">
                                                 <i class="fa fa-shopping-basket fs-1 d-block mb-3"/>
@@ -88,7 +88,7 @@
                                             <div class="d-flex justify-content-between align-items-center bg-white border rounded p-2 mb-2 shadow-sm">
                                                 <div class="flex-grow-1 me-2">
                                                     <div class="small fw-bold"><t t-esc="line.name"/></div>
-                                                    <div class="text-primary small fw-bold">Stok: <t t-esc="line.max_qty"/></div>
+                                                    <div class="text-muted small">Rp <t t-esc="(line.price || 0).toLocaleString()"/> x <t t-esc="line.qty"/></div>
                                                 </div>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <button class="btn btn-sm btn-outline-secondary p-1 px-2"
@@ -104,6 +104,12 @@
                                                 </div>
                                             </div>
                                         </t>
+                                    </div>
+
+                                    <!-- TOTAL HARGA -->
+                                    <div class="py-3 px-2 mb-3 border-top border-bottom d-flex justify-content-between align-items-center bg-white">
+                                        <span class="fw-bold text-muted">TOTAL PEMBAYARAN</span>
+                                        <span class="fs-4 fw-bold text-success">Rp <t t-esc="totalPrice.toLocaleString()"/></span>
                                     </div>
 
                                     <div class="d-grid gap-2 mt-auto">
@@ -138,10 +144,10 @@
                                                                 <span class="badge bg-danger p-2 shadow">HABIS</span>
                                                             </div>
                                                         </t>
-                                                        <div class="mb-2" t-on-click="() => item.stock_qty > 0 ? this.addToCart(item) : null">
+                                                        <div class="mb-2">
                                                             <i t-attf-class="fa #{item.for_bar ? 'fa-coffee' : 'fa-cutlery'} fa-2x text-primary opacity-25"/>
                                                         </div>
-                                                        <h6 class="fw-bold mb-1 text-truncate" t-on-click="() => item.stock_qty > 0 ? this.addToCart(item) : null"><t t-esc="item.name"/></h6>
+                                                        <h6 class="fw-bold mb-1 text-truncate"><t t-esc="item.name"/></h6>
                                                         <div class="text-primary small fw-bold mb-2">Rp <t t-esc="(item.price || 0).toLocaleString()"/></div>
 
                                                         <!-- STOCK CONTROL -->

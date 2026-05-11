@@ -119,6 +119,7 @@ export class CashierDashboard extends Component {
                 id: item.id,
                 name: item.name,
                 qty: 1,
+                price: item.price || 0,
                 for_bar: item.for_bar,
                 max_qty: item.stock_qty
             });
@@ -231,6 +232,10 @@ export class CashierDashboard extends Component {
     get filteredMenuItems() {
         const query = (this.state.searchQuery || "").toLowerCase();
         return this.state.menuItems.filter(item => item.name.toLowerCase().includes(query));
+    }
+
+    get totalPrice() {
+        return this.state.cart.lines.reduce((acc, line) => acc + (line.price * line.qty), 0);
     }
 }
 
