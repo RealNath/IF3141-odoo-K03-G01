@@ -36,11 +36,12 @@ export class CashierDashboard extends Component {
     }
 
     async fetchOrders() {
+        // Filter out finished/cancelled/rejected orders
         const orders = await this.orm.searchRead(
             'mokopi.order',
-            [],
-            ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja'],
-            { order: 'id desc' }
+            [['status', 'not in', ['selesai', 'dibatalkan', 'ditolak']]],
+            ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja', 'sequence'],
+            { order: 'sequence asc, id asc' }
         );
 
         const allLineIds = orders.flatMap(order => order.line_ids);
@@ -68,6 +69,15 @@ export class CashierDashboard extends Component {
             [],
             ['name', 'stock_qty', 'for_bar', 'price'],
         );
+    }
+
+    async updateStock(itemId, delta) {
+        const item = this.state.menuItems.find(i => i.id === itemId);
+        if (item) {
+            const newQty = Math.max(0, item.stock_qty + delta);
+            await this.orm.write('mokopi.stock', [itemId], { stock_qty: newQty });
+            await this.fetchMenuItems();
+        }
     }
 
     async fetchStatusOptions() {

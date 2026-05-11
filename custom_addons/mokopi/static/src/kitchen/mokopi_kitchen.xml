@@ -72,11 +72,17 @@
                     <t t-foreach="filteredMenuItems" t-as="item" t-key="item.id">
                         <div class="col-md-2 col-sm-4">
                             <div t-attf-class="card h-100 shadow-none border rounded text-center #{item.stock_qty &lt;= 0 ? 'bg-danger-subtle border-danger' : 'bg-light'}">
-                                <div class="card-body p-2 d-flex flex-column justify-content-center">
+                                <div class="card-body p-2 d-flex flex-column justify-content-center align-items-center">
                                     <h6 t-attf-class="small fw-bold m-0 #{item.stock_qty &lt;= 0 ? 'text-danger' : ''}"><t t-esc="item.name"/></h6>
-                                    <div t-attf-class="fw-bold #{item.stock_qty &lt;= 0 ? 'text-danger' : 'text-primary'}">
-                                        <t t-esc="item.stock_qty"/>
+
+                                    <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                                        <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click="() => this.updateStock(item.id, -1)">-</button>
+                                        <div t-attf-class="fw-bold #{item.stock_qty &lt;= 0 ? 'text-danger' : 'text-primary'}" style="min-width: 25px;">
+                                            <t t-esc="item.stock_qty"/>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click="() => this.updateStock(item.id, 1)">+</button>
                                     </div>
+
                                     <t t-if="item.stock_qty &lt;= 0">
                                         <span class="badge bg-danger x-small">HABIS</span>
                                     </t>

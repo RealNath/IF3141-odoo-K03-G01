@@ -29,10 +29,14 @@ export class KdsDashboard extends Component {
 
     async fetchOrders() {
         // Kitchen hanya melihat pesanan yang ditujukan untuk Kitchen (!for_bar)
+        // Filter out finished/cancelled/rejected orders
         // Fetch ordered by sequence to support drag and drop ordering
         const orders = (await this.orm.searchRead(
             'mokopi.order',
-            [['for_bar', '=', false]],
+            [
+                ['for_bar', '=', false],
+                ['status', 'not in', ['selesai', 'dibatalkan', 'ditolak']]
+            ],
             ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja', 'sequence'],
             { order: 'sequence asc, id asc' }
         ));
@@ -123,6 +127,15 @@ export class KdsDashboard extends Component {
             [['for_bar', '=', false]],
             ['name', 'stock_qty', 'for_bar']
         );
+    }
+
+    async updateStock(itemId, delta) {
+        const item = this.state.menuItems.find(i => i.id === itemId);
+        if (item) {
+            const newQty = Math.max(0, item.stock_qty + delta);
+            await this.orm.write('mokopi.stock', [itemId], { stock_qty: newQty });
+            await this.fetchStock();
+        }
     }
 
     async fetchStatusOptions() {

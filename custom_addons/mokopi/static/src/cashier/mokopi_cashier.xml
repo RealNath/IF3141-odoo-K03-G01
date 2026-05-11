@@ -138,13 +138,17 @@
                                                                 <span class="badge bg-danger p-2 shadow">HABIS</span>
                                                             </div>
                                                         </t>
-                                                        <div class="mb-2">
+                                                        <div class="mb-2" t-on-click="() => item.stock_qty > 0 ? this.addToCart(item) : null">
                                                             <i t-attf-class="fa #{item.for_bar ? 'fa-coffee' : 'fa-cutlery'} fa-2x text-primary opacity-25"/>
                                                         </div>
-                                                        <h6 class="fw-bold mb-1 text-truncate"><t t-esc="item.name"/></h6>
+                                                        <h6 class="fw-bold mb-1 text-truncate" t-on-click="() => item.stock_qty > 0 ? this.addToCart(item) : null"><t t-esc="item.name"/></h6>
                                                         <div class="text-primary small fw-bold mb-2">Rp <t t-esc="(item.price || 0).toLocaleString()"/></div>
-                                                        <div class="small text-muted border-top pt-2">
-                                                            Stok: <t t-esc="item.stock_qty"/>
+
+                                                        <!-- STOCK CONTROL -->
+                                                        <div class="small text-muted border-top pt-2 d-flex align-items-center justify-content-center gap-2">
+                                                            <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, -1)">-</button>
+                                                            <span class="fw-bold" style="min-width: 20px;">Stok: <t t-esc="item.stock_qty"/></span>
+                                                            <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, 1)">+</button>
                                                         </div>
                                                     </div>
                                                 </div>
