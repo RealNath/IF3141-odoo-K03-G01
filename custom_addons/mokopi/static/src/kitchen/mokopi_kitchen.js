@@ -118,7 +118,7 @@ export class KdsDashboard extends Component {
         this.state.menuItems = await this.orm.searchRead(
             'mokopi.stock',
             [['for_bar', '=', false]],
-            ['name', 'stock_qty', 'for_bar']
+            ['name', 'stock_qty', 'for_bar', 'price']
         );
     }
 

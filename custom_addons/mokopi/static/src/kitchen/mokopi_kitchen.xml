@@ -84,6 +84,7 @@
                                 <div t-attf-class="card h-100 shadow-none border rounded text-center #{item.stock_qty &lt;= 0 ? 'bg-danger-subtle border-danger' : 'bg-light'}">
                                     <div class="card-body p-2 d-flex flex-column justify-content-center align-items-center">
                                         <h6 t-attf-class="small fw-bold m-0 #{item.stock_qty &lt;= 0 ? 'text-danger' : ''}"><t t-esc="item.name"/></h6>
+                                        <div class="text-muted small">Rp <t t-esc="(item.price || 0).toLocaleString()"/></div>
 
                                         <div class="d-flex align-items-center justify-content-center gap-2 my-1">
                                             <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click="() => this.updateStock(item.id, -1)">-</button>
