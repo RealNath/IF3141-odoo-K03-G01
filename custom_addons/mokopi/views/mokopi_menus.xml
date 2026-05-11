@@ -25,36 +25,42 @@
 
     <menuitem id="menu_mokopi_root"
               name="Mokopi" 
-              sequence="5"/>
+              sequence="5"
+              groups="group_kds_kitchen,group_kds_front"/>
 
     <menuitem id="menu_mokopi_kds_dashboard" 
-              name="KDS" 
+              name="KDS (Kitchen Display)"
               parent="menu_mokopi_root" 
               action="action_mokopi_kds_dashboard" 
-              sequence="10"/>
+              sequence="10"
+              groups="group_kds_kitchen"/>
     
     <menuitem id="menu_mokopi_cashier_dashboard" 
-              name="Kasir" 
+              name="Kasir"
               parent="menu_mokopi_root" 
               action="action_mokopi_cashier_dashboard" 
-              sequence="20"/>
+              sequence="20"
+              groups="group_kds_front"/>
 
     <menuitem id="menu_mokopi_orders"
-              name="Backend Orders"
+              name="Daftar Pesanan Aktif"
               parent="menu_mokopi_root"
               action="action_mokopi_orders"
-              sequence="30"/>
+              sequence="30"
+              groups="base.group_no_one"/>
 
     <menuitem id="menu_mokopi_stock"
-              name="Backend Stock"
+              name="Manajemen Stok"
               parent="menu_mokopi_root"
               action="action_mokopi_stock"
-              sequence="40"/>
+              sequence="40"
+              groups="base.group_system"/>
     
     <menuitem id="menu_mokopi_logs" 
               name="Riwayat Sistem" 
               parent="menu_mokopi_root" 
               action="action_mokopi_order_log" 
-              sequence="50"/>
+              sequence="50"
+              groups="base.group_system"/>
 
 </odoo>

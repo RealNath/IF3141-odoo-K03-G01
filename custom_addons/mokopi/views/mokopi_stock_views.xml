@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mokopi_stock_tree" model="ir.ui.view">
+        <field name="name">mokopi.stock.tree</field>
+        <field name="model">mokopi.stock</field>
+        <field name="arch" type="xml">
+            <tree string="Manajemen Stok">
+                <field name="name"/>
+                <field name="price"/>
+                <field name="stock_qty"/>
+                <field name="status_stok" decoration-info="status_stok == 'tersedia'" decoration-danger="status_stok == 'habis'" widget="badge"/>
+                <field name="for_bar"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_mokopi_stock_form" model="ir.ui.view">
+        <field name="name">mokopi.stock.form</field>
+        <field name="model">mokopi.stock</field>
+        <field name="arch" type="xml">
+            <form string="Menu &amp; Stok">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="price"/>
+                        </group>
+                        <group>
+                            <field name="stock_qty"/>
+                            <field name="status_stok"/>
+                            <field name="for_bar"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

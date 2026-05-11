@@ -6,10 +6,11 @@
         <field name="model">mokopi.order.log</field>
         <field name="arch" type="xml">
             <tree string="Order Logs" create="false" edit="false" delete="false" default_order="create_date desc">
-                <field name="create_date"/>
-                <field name="order_name"/>
-                <field name="action_type"/>
-                <field name="description"/>
+                <field name="create_date" string="Waktu"/>
+                <field name="order_name" string="Referensi"/>
+                <field name="action_type" string="Aksi"/>
+                <field name="description" string="Detail Perubahan"/>
+                <field name="total_price" string="Total Nominal" sum="Total Keseluruhan"/>
             </tree>
         </field>
     </record>

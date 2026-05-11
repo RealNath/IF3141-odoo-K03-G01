@@ -7,13 +7,16 @@ import { useService } from "@web/core/utils/hooks";
 export class CashierDashboard extends Component {
     setup() {
         this.orm = useService("orm");
-        
-        // State holds active orders, menu items, and the current draft order
+        this.notification = useService("notification");
+
         this.state = useState({
             orders: [],
             menuItems: [],
+            isModalOpen: false,
             cart: {
                 order_number: "",
+                customer_name: "",
+                no_meja: "",
                 lines: [],
             },
             statusOptions: [],
@@ -36,7 +39,8 @@ export class CashierDashboard extends Component {
         const orders = await this.orm.searchRead(
             'mokopi.order',
             [],
-            ['name', 'order_number', 'status', 'line_ids', 'for_bar'],
+            ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja'],
+            { order: 'id desc' }
         );
 
         const allLineIds = orders.flatMap(order => order.line_ids);
@@ -62,33 +66,42 @@ export class CashierDashboard extends Component {
         this.state.menuItems = await this.orm.searchRead(
             'mokopi.stock',
             [],
-            ['name', 'stock_qty', 'for_bar'], // Added for_bar here
+            ['name', 'stock_qty', 'for_bar', 'price'],
         );
     }
 
     async fetchStatusOptions() {
-        const fields = await this.orm.call(
-            'mokopi.order',
-            'fields_get',
-            [['status']],
-        );
-        
+        const fields = await this.orm.call('mokopi.order', 'fields_get', [['status']]);
         this.state.statusOptions = fields.status.selection;
     }
 
     async fetchFsmRules() {
-        this.fsmRules = await this.orm.call(
-            'mokopi.order',
-            'get_fsm_transitions',
-            [],
-        );
+        this.fsmRules = await this.orm.call('mokopi.order', 'get_fsm_transitions', []);
+    }
+
+    openModal() {
+        this.state.isModalOpen = true;
+        this.state.cart = {
+            order_number: "INV/" + Date.now().toString().slice(-6),
+            customer_name: "",
+            no_meja: "",
+            lines: [],
+        };
+    }
+
+    closeModal() {
+        this.state.isModalOpen = false;
     }
 
     addToCart(item) {
-        if (item.stock_qty <= 0) return;
-
         const existingLine = this.state.cart.lines.find(line => line.id === item.id);
-        
+        const currentQty = existingLine ? existingLine.qty : 0;
+
+        if (currentQty >= item.stock_qty) {
+            this.notification.add(`Maaf, stok ${item.name} habis atau tidak mencukupi.`, { type: 'danger' });
+            return;
+        }
+
         if (existingLine) {
             existingLine.qty += 1;
         } else {
@@ -97,7 +110,26 @@ export class CashierDashboard extends Component {
                 name: item.name,
                 qty: 1,
                 for_bar: item.for_bar,
+                max_qty: item.stock_qty
             });
+        }
+    }
+
+    increaseQty(index) {
+        const line = this.state.cart.lines[index];
+        if (line.qty < line.max_qty) {
+            line.qty += 1;
+        } else {
+            this.notification.add(`Batas stok tercapai.`, { type: 'warning' });
+        }
+    }
+
+    decreaseQty(index) {
+        const line = this.state.cart.lines[index];
+        if (line.qty > 1) {
+            line.qty -= 1;
+        } else {
+            this.removeFromCart(index);
         }
     }
 
@@ -106,95 +138,85 @@ export class CashierDashboard extends Component {
     }
 
     async submitOrder() {
+        if (!this.state.cart.customer_name) {
+            this.notification.add("Nama Pelanggan wajib diisi!", { type: 'danger' });
+            return;
+        }
         if (this.state.cart.lines.length === 0) return;
 
-        // 1. Split the cart into Bar items and Kitchen items
         const barLines = this.state.cart.lines.filter(line => line.for_bar === true);
         const kitchenLines = this.state.cart.lines.filter(line => line.for_bar === false);
-
         const orderNumber = this.state.cart.order_number || "Takeout";
-        
-        // 2. Prepare an array of orders to create
         const ordersToCreate = [];
 
-        // If there are Bar items, create a Bar Order
+        const commonData = {
+            order_number: orderNumber,
+            customer_name: this.state.cart.customer_name,
+            no_meja: this.state.cart.no_meja,
+            status: 'dipesan',
+        };
+
         if (barLines.length > 0) {
             ordersToCreate.push({
-                order_number: orderNumber,
-                status: 'dipesan',
-                for_bar: true, // Flag this specific order for the Bar
-                line_ids: barLines.map(line => [0, 0, {
-                    menu_item_id: line.id,
-                    quantity: line.qty
-                }])
+                ...commonData,
+                for_bar: true,
+                line_ids: barLines.map(line => [0, 0, { menu_item_id: line.id, quantity: line.qty }])
             });
         }
 
-        // If there are Kitchen items, create a Kitchen Order
         if (kitchenLines.length > 0) {
             ordersToCreate.push({
-                order_number: orderNumber,
-                status: 'dipesan',
-                for_bar: false, // Flag this specific order for the Kitchen
-                line_ids: kitchenLines.map(line => [0, 0, {
-                    menu_item_id: line.id,
-                    quantity: line.qty
-                }])
+                ...commonData,
+                for_bar: false,
+                line_ids: kitchenLines.map(line => [0, 0, { menu_item_id: line.id, quantity: line.qty }])
             });
         }
 
-        // 3. Batch Create: Odoo can create multiple records in one ORM call
-        if (ordersToCreate.length > 0) {
+        try {
             await this.orm.create('mokopi.order', ordersToCreate);
+            this.notification.add("Pesanan berhasil dikirim!", { type: 'success' });
+            this.state.isModalOpen = false;
+            await Promise.all([this.fetchOrders(), this.fetchMenuItems()]);
+        } catch (error) {
+            // Error handling handled by Odoo RPC usually, but added fetch refresh
+            await this.fetchMenuItems();
         }
-
-        // 4. Reset the cart (Fixed variable alignment)
-        this.state.cart = { order_number: "", lines: [] };
-        
-        // 5. Refresh the screen to show the new orders
-        await this.fetchOrders();
     }
 
     async updateOrderStatus(orderId, newStatus) {
-        // 1. Write the new status to the database
-        await this.orm.write('mokopi.order', [orderId], {
-            status: newStatus
-        });
-
-        // 2. Fetch the orders again to refresh the screen
-        await this.fetchOrders();
+        try {
+            await this.orm.write('mokopi.order', [orderId], { status: newStatus });
+            await this.fetchOrders();
+        } catch (error) {
+            // Error will be shown by Odoo notification if write fails due to UserError
+            await this.fetchOrders();
+        }
     }
 
-    async updateStock(itemId, changeAmount) {
-        // 1. Find the item in the current state
-        const item = this.state.menuItems.find(i => i.id === itemId);
-        
-        // Prevent stock from going below 0 (optional, but good practice)
-        const newQty = Math.max(0, item.stock_qty + changeAmount);
+    getValidOptionsForOrder(order) {
+        if (!this.fsmRules || Object.keys(this.fsmRules).length === 0) {
+            return [[order.status, order.status]];
+        }
 
-        // 2. Write the new quantity to the database
-        await this.orm.write('mokopi.stock', [itemId], {
-            stock_qty: newQty
-        });
+        // Tentukan rule set berdasarkan jenis pesanan (Bar vs Kitchen)
+        let ruleSet;
+        if (order.for_bar) {
+            ruleSet = this.fsmRules['bar'];
+        } else {
+            // Sesuai permintaan: Kasir hanya boleh batal/selesai untuk menu Kitchen
+            ruleSet = this.fsmRules['cashier_kitchen'];
+        }
 
-        // 3. Refresh only the menu items to update the UI instantly
-        await this.fetchMenuItems();
-    }
+        // Jika ruleSet spesifik tidak ditemukan, coba gunakan fsmRules langsung (fallback)
+        ruleSet = ruleSet || this.fsmRules;
 
-    getValidOptionsForOrder(currentStatus) {
-        const allowedKeys = this.fsmRules[currentStatus] || [currentStatus];
+        const allowedKeys = (ruleSet && ruleSet[order.status]) || [order.status];
         return this.state.statusOptions.filter(option => allowedKeys.includes(option[0]));
     }
 
     get filteredMenuItems() {
-        if (!this.state.searchQuery) {
-            return this.state.menuItems;
-        }
-        
-        const query = this.state.searchQuery.toLowerCase();
-        return this.state.menuItems.filter(item => 
-            item.name.toLowerCase().includes(query)
-        );
+        const query = (this.state.searchQuery || "").toLowerCase();
+        return this.state.menuItems.filter(item => item.name.toLowerCase().includes(query));
     }
 }
 
