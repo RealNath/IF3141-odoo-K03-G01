@@ -148,7 +148,11 @@ export class KdsDashboard extends Component {
         await this.orm.write('mokopi.order', [orderId], {
             status: newStatus
         });
-        await this.fetchOrders();
+        // Refresh orders and stock to show recovered quantities
+        await Promise.all([
+            this.fetchOrders(),
+            this.fetchStock()
+        ]);
     }
 
     getValidOptionsForOrder(order) {

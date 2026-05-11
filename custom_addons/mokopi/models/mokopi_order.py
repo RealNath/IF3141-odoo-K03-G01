@@ -157,7 +157,18 @@ class MokopiOrder(models.Model):
                 allowed = transitions.get(order.status, [])
                 if new_status not in allowed:
                     raise UserError(f"Transisi tidak valid untuk {order.name}: {order.status} -> {new_status}")
+
                 if order.status != new_status:
+                    # LOGIKA PENGEMBALIAN STOK
+                    # Jika status berubah jadi Dibatalkan/Ditolak, dan sebelumnya bukan Dibatalkan/Ditolak
+                    if new_status in ['dibatalkan', 'ditolak'] and order.status not in ['dibatalkan', 'ditolak']:
+                        for line in order.line_ids:
+                            menu = line.menu_item_id
+                            new_qty = menu.stock_qty + line.quantity
+                            menu.sudo().write({'stock_qty': new_qty})
+
+                        order._create_audit_log('Pengembalian Stok', f'Stok dikembalikan karena pesanan {new_status}.')
+
                     order._create_audit_log('Update Status', f'Status: {order.status} -> {new_status}')
         return super(MokopiOrder, self.sudo()).write(vals)
 

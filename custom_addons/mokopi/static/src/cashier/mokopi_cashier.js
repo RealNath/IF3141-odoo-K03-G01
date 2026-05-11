@@ -186,7 +186,11 @@ export class CashierDashboard extends Component {
     async updateOrderStatus(orderId, newStatus) {
         try {
             await this.orm.write('mokopi.order', [orderId], { status: newStatus });
-            await this.fetchOrders();
+            // Refresh orders and menu items (stock)
+            await Promise.all([
+                this.fetchOrders(),
+                this.fetchMenuItems()
+            ]);
         } catch (error) {
             // Error will be shown by Odoo notification if write fails due to UserError
             await this.fetchOrders();
