@@ -71,6 +71,13 @@ class MokopiOrder(models.Model):
             'cashier_kitchen': self.ALLOWED_TRANSITIONS_CASHIER_KITCHEN,
         }
 
+    @api.model
+    def resequence_orders(self, order_ids):
+        """Updates sequences for a list of order IDs in one go"""
+        for index, order_id in enumerate(order_ids):
+            self.sudo().browse(order_id).write({'sequence': (index + 1) * 10})
+        return True
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:

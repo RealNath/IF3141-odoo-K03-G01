@@ -29,11 +29,12 @@ export class KdsDashboard extends Component {
 
     async fetchOrders() {
         // Kitchen hanya melihat pesanan yang ditujukan untuk Kitchen (!for_bar)
+        // Fetch ordered by sequence to support drag and drop ordering
         const orders = (await this.orm.searchRead(
             'mokopi.order',
             [['for_bar', '=', false]],
-            ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja'],
-            { order: 'id desc' }
+            ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja', 'sequence'],
+            { order: 'sequence asc, id asc' }
         ));
 
         const allLineIds = orders.flatMap(order => order.line_ids);
@@ -54,6 +55,66 @@ export class KdsDashboard extends Component {
 
         this.state.orders = orders;
     }
+
+    // --- DRAG AND DROP METHODS ---
+    onDragStart(ev, order) {
+        this.draggedOrderId = order.id;
+        // setData is required for drag and drop to work in many browsers (Chrome/Firefox)
+        // It must be a string
+        ev.dataTransfer.setData('text/plain', String(order.id));
+        ev.dataTransfer.effectAllowed = 'move';
+
+        // Add visual feedback
+        const card = ev.target.closest('.card');
+        if (card) {
+            card.style.opacity = "0.5";
+        }
+    }
+
+    onDragOver(ev) {
+        if (ev.preventDefault) {
+            ev.preventDefault();
+        }
+        ev.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    async onDrop(ev, targetOrder) {
+        ev.preventDefault();
+
+        // Reset opacity for all cards
+        const allCards = document.querySelectorAll('.o_kds_dashboard .card');
+        allCards.forEach(c => c.style.opacity = "1");
+
+        if (!this.draggedOrderId || this.draggedOrderId === targetOrder.id) {
+            this.draggedOrderId = null;
+            return;
+        }
+
+        const draggedIndex = this.state.orders.findIndex(o => o.id === this.draggedOrderId);
+        const targetIndex = this.state.orders.findIndex(o => o.id === targetOrder.id);
+
+        if (draggedIndex === -1 || targetIndex === -1) {
+            this.draggedOrderId = null;
+            return;
+        }
+
+        // Reorder locally for instant feedback
+        const [draggedOrder] = this.state.orders.splice(draggedIndex, 1);
+        this.state.orders.splice(targetIndex, 0, draggedOrder);
+
+        // Update sequence in background using the new mass-update method
+        try {
+            const orderIds = this.state.orders.map(o => o.id);
+            await this.orm.call('mokopi.order', 'resequence_orders', [orderIds]);
+        } catch (error) {
+            console.error("Failed to update sequence:", error);
+            await this.fetchOrders();
+        } finally {
+            this.draggedOrderId = null;
+        }
+    }
+    // -----------------------------
 
     async fetchStock() {
         // Kitchen hanya melihat stok makanan (non-bar)
