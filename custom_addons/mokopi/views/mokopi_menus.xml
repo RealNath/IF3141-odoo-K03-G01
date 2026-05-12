@@ -61,13 +61,13 @@
               parent="menu_mokopi_root"
               action="action_mokopi_stock"
               sequence="40"
-              groups="base.group_system"/>
+              groups="base.group_system,mokopi.group_kds_supervisor"/>
     
     <menuitem id="menu_mokopi_logs" 
               name="Riwayat Sistem" 
               parent="menu_mokopi_root" 
               action="action_mokopi_order_log" 
               sequence="50"
-              groups="base.group_system"/>
+              groups="base.group_system,mokopi.group_kds_supervisor"/>
 
 </odoo>
