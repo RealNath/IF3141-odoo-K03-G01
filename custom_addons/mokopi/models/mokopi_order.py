@@ -37,8 +37,8 @@ class MokopiOrder(models.Model):
         'dipesan': ['dipesan', 'diproses', 'dibatalkan'],
         'diproses': ['diproses', 'siap', 'dibatalkan'],
         'siap': ['siap', 'selesai'],
-        'ditolak': ['ditolak', 'dibatalkan'],
-        'dibatalkan': ['dibatalkan'],
+        'ditolak': ['ditolak', 'selesai'], #masih ada takut programnya rusak (tapi tidak berguna)
+        'dibatalkan': ['dibatalkan', 'selesai'],
         'selesai': ['selesai'],
     }
 
@@ -46,9 +46,9 @@ class MokopiOrder(models.Model):
     ALLOWED_TRANSITIONS_KITCHEN = {
         'dipesan': ['dipesan', 'diproses', 'ditolak'],
         'diproses': ['diproses', 'siap', 'ditolak'],
-        'siap': ['siap', 'selesai'],
-        'ditolak': ['ditolak', 'dibatalkan'],
-        'dibatalkan': ['dibatalkan'],
+        'siap': ['siap'],
+        'ditolak': ['ditolak'],
+        'dibatalkan': ['dibatalkan', 'selesai'],
         'selesai': ['selesai'],
     }
 
@@ -57,7 +57,7 @@ class MokopiOrder(models.Model):
         'dipesan': ['dipesan', 'dibatalkan'],
         'diproses': ['diproses', 'dibatalkan'],
         'siap': ['siap', 'selesai'],
-        'ditolak': ['ditolak', 'dibatalkan'],
+        'ditolak': ['ditolak', 'selesai'],
         'dibatalkan': ['dibatalkan'],
         'selesai': ['selesai'],
     }
