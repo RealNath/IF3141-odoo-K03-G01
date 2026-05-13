@@ -144,19 +144,21 @@ class MokopiOrder(models.Model):
 
     def write(self, vals):
         if 'status' in vals:
+            is_admin = self.env.is_admin() or self.env.su
             is_bar = self.env.user.has_group('mokopi.group_kds_front')
 
             new_status = vals['status']
             for order in self:
                 # Decide which rule to apply
-                if is_bar:
-                    transitions = self.ALLOWED_TRANSITIONS_BAR if order.for_bar else self.ALLOWED_TRANSITIONS_CASHIER_KITCHEN
-                else:
-                    transitions = self.ALLOWED_TRANSITIONS_KITCHEN
-
-                allowed = transitions.get(order.status, [])
-                if new_status not in allowed:
-                    raise UserError(f"Transisi tidak valid untuk {order.name}: {order.status} -> {new_status}")
+                if not is_admin:
+                    if is_bar:
+                        transitions = self.ALLOWED_TRANSITIONS_BAR if order.for_bar else self.ALLOWED_TRANSITIONS_CASHIER_KITCHEN
+                    else:
+                        transitions = self.ALLOWED_TRANSITIONS_KITCHEN
+    
+                    allowed = transitions.get(order.status, [])
+                    if new_status not in allowed:
+                        raise UserError(f"Transisi tidak valid untuk {order.name}: {order.status} -> {new_status}")
 
                 if order.status != new_status:
                     # LOGIKA PENGEMBALIAN STOK
@@ -169,7 +171,9 @@ class MokopiOrder(models.Model):
 
                         order._create_audit_log('Pengembalian Stok', f'Stok dikembalikan karena pesanan {new_status}.')
 
-                    order._create_audit_log('Update Status', f'Status: {order.status} -> {new_status}')
+                    bypass_note = " (Admin Bypass)" if is_admin else ""
+                    order._create_audit_log('Update Status', f'Status: {order.status} -> {new_status}{bypass_note}')
+        
         return super(MokopiOrder, self.sudo()).write(vals)
 
     def _create_audit_log(self, action_type, description):

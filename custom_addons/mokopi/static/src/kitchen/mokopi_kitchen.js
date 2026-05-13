@@ -14,19 +14,11 @@ export class KdsDashboard extends Component {
             menuItems: [],
             statusOptions: [],
             searchQuery: "",
-            hasAccess: true, // Asumsikan punya akses sampai terbukti sebaliknya
         });
 
         this.fsmRules = {};
 
         onWillStart(async () => {
-            // Lapis 3: Cek grup via JS untuk proteksi tambahan
-            const isKitchen = await this.userService.hasGroup("mokopi.group_kds_kitchen");
-            if (!isKitchen) {
-                this.state.hasAccess = false;
-                return;
-            }
-
             await Promise.all([
                 this.fetchOrders(),
                 this.fetchStock(),

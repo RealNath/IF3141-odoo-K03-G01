@@ -152,9 +152,13 @@
 
                                                         <!-- STOCK CONTROL -->
                                                         <div class="small text-muted border-top pt-2 d-flex align-items-center justify-content-center gap-2">
-                                                            <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, -1)">-</button>
+                                                            <t t-if="item.for_bar">
+                                                                <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, -1)">-</button>
+                                                            </t>
                                                             <span class="fw-bold" style="min-width: 20px;">Stok: <t t-esc="item.stock_qty"/></span>
-                                                            <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, 1)">+</button>
+                                                            <t t-if="item.for_bar">
+                                                                <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, 1)">+</button>
+                                                            </t>
                                                         </div>
                                                     </div>
                                                 </div>

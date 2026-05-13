@@ -21,6 +21,7 @@
 
             'mokopi/static/src/cashier/mokopi_cashier.js',
             'mokopi/static/src/cashier/mokopi_cashier.xml',
+            'mokopi/static/src/cashier/mokopi_cashier.scss',
         ],
     },
     'installable': True,
