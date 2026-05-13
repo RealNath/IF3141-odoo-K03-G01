@@ -6,22 +6,27 @@ import { useService } from "@web/core/utils/hooks";
 
 export class KdsDashboard extends Component {
     setup() {
-        // Bring in Odoo's ORM to talk to the database
         this.orm = useService("orm");
-        
-        // Define the reactive state. When these change, the UI auto-updates.
+        this.userService = useService("user");
+
         this.state = useState({
             orders: [],
             menuItems: [],
             statusOptions: [],
             searchQuery: "",
+            hasAccess: true, // Asumsikan punya akses sampai terbukti sebaliknya
         });
 
-        // Define fsm rules for order status
         this.fsmRules = {};
 
-        // Run this before the component renders
         onWillStart(async () => {
+            // Lapis 3: Cek grup via JS untuk proteksi tambahan
+            const isKitchen = await this.userService.hasGroup("mokopi.group_kds_kitchen");
+            if (!isKitchen) {
+                this.state.hasAccess = false;
+                return;
+            }
+
             await Promise.all([
                 this.fetchOrders(),
                 this.fetchStock(),
@@ -32,11 +37,17 @@ export class KdsDashboard extends Component {
     }
 
     async fetchOrders() {
+        // Kitchen hanya melihat pesanan yang ditujukan untuk Kitchen (!for_bar)
+        // Filter out finished/cancelled/rejected orders
         const orders = (await this.orm.searchRead(
             'mokopi.order',
-            [],
-            ['name', 'order_number', 'status', 'line_ids', 'for_bar']
-        )).filter(order => !order.for_bar);
+            [
+                ['for_bar', '=', false],
+                ['status', '!=', 'selesai']
+            ],
+            ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja', 'sequence'],
+            { order: 'sequence asc, id asc' }
+        ));
 
         const allLineIds = orders.flatMap(order => order.line_ids);
         
@@ -57,75 +68,96 @@ export class KdsDashboard extends Component {
         this.state.orders = orders;
     }
 
+    // --- DRAG AND DROP METHODS ---
+    onDragStart(ev, order) {
+        this.draggedOrderId = order.id;
+        ev.dataTransfer.setData('text/plain', String(order.id));
+        ev.dataTransfer.effectAllowed = 'move';
+        const card = ev.target.closest('.card');
+        if (card) card.style.opacity = "0.5";
+    }
+
+    onDragOver(ev) {
+        if (ev.preventDefault) ev.preventDefault();
+        ev.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    async onDrop(ev, targetOrder) {
+        ev.preventDefault();
+        const allCards = document.querySelectorAll('.o_kds_dashboard .card');
+        allCards.forEach(c => c.style.opacity = "1");
+
+        if (!this.draggedOrderId || this.draggedOrderId === targetOrder.id) {
+            this.draggedOrderId = null;
+            return;
+        }
+
+        const draggedIndex = this.state.orders.findIndex(o => o.id === this.draggedOrderId);
+        const targetIndex = this.state.orders.findIndex(o => o.id === targetOrder.id);
+
+        if (draggedIndex === -1 || targetIndex === -1) {
+            this.draggedOrderId = null;
+            return;
+        }
+
+        const [draggedOrder] = this.state.orders.splice(draggedIndex, 1);
+        this.state.orders.splice(targetIndex, 0, draggedOrder);
+
+        try {
+            const orderIds = this.state.orders.map(o => o.id);
+            await this.orm.call('mokopi.order', 'resequence_orders', [orderIds]);
+        } catch (error) {
+            await this.fetchOrders();
+        } finally {
+            this.draggedOrderId = null;
+        }
+    }
+
     async fetchStock() {
-        this.state.menuItems = (await this.orm.searchRead(
+        this.state.menuItems = await this.orm.searchRead(
             'mokopi.stock',
-            [], 
-            ['name', 'stock_qty']
-        )).filter(item => !item.for_bar);
+            [['for_bar', '=', false]],
+            ['name', 'stock_qty', 'for_bar', 'price']
+        );
+    }
+
+    async updateStock(itemId, delta) {
+        const item = this.state.menuItems.find(i => i.id === itemId);
+        if (item) {
+            const newQty = Math.max(0, item.stock_qty + delta);
+            await this.orm.write('mokopi.stock', [itemId], { stock_qty: newQty });
+            await this.fetchStock();
+        }
     }
 
     async fetchStatusOptions() {
-        const fields = await this.orm.call(
-            'mokopi.order',
-            'fields_get',
-            [['status']],
-        );
-        
+        const fields = await this.orm.call('mokopi.order', 'fields_get', [['status']]);
         this.state.statusOptions = fields.status.selection;
     }
 
     async fetchFsmRules() {
-        this.fsmRules = await this.orm.call(
-            'mokopi.order',
-            'get_fsm_transitions',
-            [],
-        );
+        this.fsmRules = await this.orm.call('mokopi.order', 'get_fsm_transitions', [], { dashboard_type: 'kitchen' });
     }
 
     async updateOrderStatus(orderId, newStatus) {
-        // 1. Write the new status to the database
-        await this.orm.write('mokopi.order', [orderId], {
-            status: newStatus
-        });
-
-        // 2. Fetch the orders again to refresh the screen
-        await this.fetchOrders();
+        await this.orm.write('mokopi.order', [orderId], { status: newStatus });
+        await Promise.all([this.fetchOrders(), this.fetchStock()]);
     }
 
-    async updateStock(itemId, changeAmount) {
-        // Find the current item in our state
-        const item = this.state.menuItems.find(i => i.id === itemId);
-        const newQty = item.stock_qty + changeAmount;
-
-        // Write the new quantity to the database
-        await this.orm.write('mokopi.stock', [itemId], {
-            stock_qty: newQty
-        });
-
-        // Refresh the UI by fetching fresh stocks
-        await this.fetchStock();
-    }
-
-    getValidOptionsForOrder(currentStatus) {
-        const allowedKeys = this.fsmRules[currentStatus] || [currentStatus];
+    getValidOptionsForOrder(order) {
+        if (!this.fsmRules || !this.fsmRules['kitchen']) return [[order.status, order.status]];
+        const ruleSet = this.fsmRules['kitchen'] || {};
+        const allowedKeys = ruleSet[order.status] || [order.status];
         return this.state.statusOptions.filter(option => allowedKeys.includes(option[0]));
     }
 
     get filteredMenuItems() {
-        if (!this.state.searchQuery) {
-            return this.state.menuItems;
-        }
-        
+        if (!this.state.searchQuery) return this.state.menuItems;
         const query = this.state.searchQuery.toLowerCase();
-        return this.state.menuItems.filter(item => 
-            item.name.toLowerCase().includes(query)
-        );
+        return this.state.menuItems.filter(item => item.name.toLowerCase().includes(query));
     }
 }
 
-// Bind the component to the XML template we created
 KdsDashboard.template = "mokopi.KdsDashboard";
-
-// Register this component as an action in Odoo
 registry.category("actions").add("mokopi.kds.dashboard_action", KdsDashboard);

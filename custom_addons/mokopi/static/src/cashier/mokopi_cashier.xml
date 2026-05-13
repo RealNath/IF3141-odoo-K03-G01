@@ -4,40 +4,48 @@
     <t t-name="mokopi.CashierDashboard" owl="1">
         <div class="d-flex flex-column h-100 bg-view">
             
-            <div class="h-50 overflow-auto p-3 border-bottom bg-light">
-                <h4 class="mb-3">Pesanan Aktif</h4>
-                <div class="row g-3">
+            <!-- HEADER & ACTION -->
+            <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center shadow-sm">
+                <h4 class="m-0 fw-bold text-primary"><i class="fa fa-coffee me-2"/>Dashboard Kasir (Bar)</h4>
+                <button class="btn btn-primary btn-lg shadow-sm fw-bold" t-on-click="openModal">
+                    <i class="fa fa-plus-circle me-2"/>BUAT PESANAN BARU
+                </button>
+            </div>
+
+            <!-- MAIN CONTENT: ACTIVE ORDERS -->
+            <div class="flex-grow-1 overflow-auto p-4 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="m-0 text-muted text-uppercase fw-bold">Antrean Pesanan Berjalan</h5>
+                    <span class="badge bg-primary rounded-pill"><t t-esc="state.orders.length"/> Aktif</span>
+                </div>
+
+                <div class="row g-4">
                     <t t-foreach="state.orders" t-as="order" t-key="order.id">
                         <div class="col-md-3">
-                            <div class="card shadow-sm h-100 border-info">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title"><t t-esc="order.name"/></h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">Pesanan: <t t-esc="order.order_number"/></h6>
+                            <div t-attf-class="card h-100 shadow-sm border-0 border-top border-4 #{order.status === 'siap' ? 'border-success' : 'border-primary'}">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold m-0 text-truncate" style="max-width: 70%;"><t t-esc="order.customer_name"/></h6>
+                                        <span class="badge bg-light text-dark border small">Meja <t t-esc="order.no_meja or '-'"/></span >
+                                    </div>
+                                    <div class="small text-muted mb-3">#<t t-esc="order.order_number"/></div>
 
-                                    <hr/>
+                                    <div class="border-top pt-2 mb-3">
+                                        <ul class="list-unstyled small m-0">
+                                            <t t-foreach="order.full_lines" t-as="line" t-key="line.id">
+                                                <li class="mb-1 d-flex justify-content-between">
+                                                    <span><t t-esc="line.quantity"/>x <t t-esc="line.menu_item_id[1]"/></span>
+                                                </li>
+                                            </t>
+                                        </ul>
+                                    </div>
 
-                                    <ul class="list-unstyled mb-3">
-                                        <t t-foreach="order.full_lines" t-as="line" t-key="line.id">
-                                            <li class="mb-1">
-                                                <strong><t t-esc="line.quantity"/>x</strong> 
-                                                <t t-esc="line.menu_item_id[1]"/>
-                                                
-                                                <t t-if="line.notes">
-                                                    <br/><small class="text-danger">*** <t t-esc="line.notes"/> ***</small>
-                                                </t>
-                                            </li>
-                                        </t>
-                                    </ul>
-
-                                    <select class="form-select form-select-sm mt-auto border-primary text-primary fw-bold" 
+                                    <select class="form-select form-select-sm fw-bold bg-light border-0 shadow-none mt-auto"
                                             t-on-change="(ev) => this.updateOrderStatus(order.id, ev.target.value)">
-                                        
-                                        <t t-foreach="getValidOptionsForOrder(order.status)" t-as="option" t-key="option[0]">
-                                            
+                                        <t t-foreach="getValidOptionsForOrder(order)" t-as="option" t-key="option[0]">
                                             <option t-att-value="option[0]" t-att-selected="order.status === option[0]">
                                                 <t t-esc="option[1]"/>
                                             </option>
-                                            
                                         </t>
                                     </select>
                                 </div>
@@ -47,82 +55,118 @@
                 </div>
             </div>
 
-            <div class="h-50 d-flex flex-row">
-                
-                <div class="w-25 border-end p-3 d-flex flex-column bg-white">
-                    <h4 class="mb-3">Pesanan Baru</h4>
-                    
-                    <input type="text" class="form-control mb-3" placeholder="Nomor Pesanan..." 
-                           t-model="state.cart.order_number"/>
-                    
-                    <div class="flex-grow-1 overflow-auto border rounded p-2 mb-3">
-                        <t t-if="state.cart.lines.length === 0">
-                            <div class="text-muted text-center mt-3">Pesanan Kosong</div>
-                        </t>
-                        <t t-foreach="state.cart.lines" t-as="line" t-key="line_index">
-                            <div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                                <div>
-                                    <span class="fw-bold"><t t-esc="line.qty"/>x </span>
-                                    <t t-esc="line.name"/>
-                                </div>
-                                <button class="btn btn-sm btn-link text-danger p-0" 
-                                        t-on-click="() => this.removeFromCart(line_index)">
-                                    <i class="fa fa-trash"/>
-                                </button>
+            <!-- MODAL: BUAT PESANAN BARU -->
+            <t t-if="state.isModalOpen">
+                <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                    <div class="modal-dialog modal-xl modal-dialog-centered">
+                        <div class="modal-content shadow-lg border-0" style="height: 85vh;">
+                            <div class="modal-header bg-primary text-white py-2">
+                                <h5 class="modal-title fw-bold">Input Pesanan Baru</h5>
+                                <button type="button" class="btn-close btn-close-white" t-on-click="closeModal"></button>
                             </div>
-                        </t>
-                    </div>
+                            <div class="modal-body p-0 d-flex flex-row overflow-hidden">
 
-                    <button class="btn btn-success btn-lg w-100" 
-                            t-att-disabled="state.cart.lines.length === 0"
-                            t-on-click="submitOrder">
-                        Kirim
-                    </button>
-                </div>
+                                <!-- FORM & CART (LEFT) -->
+                                <div class="w-40 border-end p-4 d-flex flex-column bg-white">
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Informasi Pelanggan</label>
+                                        <input type="text" class="form-control form-control-lg mb-2 shadow-none border-primary"
+                                               placeholder="* Nama Pelanggan" t-model="state.cart.customer_name"/>
+                                        <input type="text" class="form-control shadow-none border-primary"
+                                               placeholder="Nomor Meja" t-model="state.cart.no_meja"/>
+                                    </div>
 
-                <div class="w-75 p-3 overflow-auto bg-light">
-                    
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="m-0">Menu</h4>
-                        <input type="text" class="form-control bg-white" style="max-width: 250px;" 
-                               placeholder="Cari menu..." 
-                               t-model="state.searchQuery"/>
-                    </div>
-
-                    <div class="row g-2">
-                        <t t-foreach="filteredMenuItems" t-as="item" t-key="item.id">
-                            <div class="col-md-3 col-sm-4">
-                                <div t-attf-class="card h-100 shadow-sm text-center cursor-pointer #{item.stock_qty &lt;= 0 ? 'opacity-50' : 'border-primary'}"
-                                    t-on-click="() => this.addToCart(item)">
-                                    
-                                    <div class="card-body p-2 d-flex flex-column justify-content-center">
-                                        <h6 class="card-title m-0"><t t-esc="item.name"/></h6>
-                                        
-                                        <t t-if="item.for_bar">
-                                            <div class="d-flex justify-content-center align-items-center gap-2 mt-2">
-                                                <button class="btn btn-outline-danger px-2 py-0 fw-bold" 
-                                                        style="font-size: 0.8rem;"
-                                                        t-on-click.stop="() => this.updateStock(item.id, -1)">-</button>
-                                                
-                                                <small class="text-muted m-0"><t t-esc="item.stock_qty"/> in stock</small>
-                                                
-                                                <button class="btn btn-outline-success px-2 py-0 fw-bold" 
-                                                        style="font-size: 0.8rem;"
-                                                        t-on-click.stop="() => this.updateStock(item.id, 1)">+</button>
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Detail Keranjang</label>
+                                    <div class="flex-grow-1 overflow-auto border rounded bg-light p-3 mb-2">
+                                        <t t-if="state.cart.lines.length === 0">
+                                            <div class="text-center py-5 text-muted opacity-50">
+                                                <i class="fa fa-shopping-basket fs-1 d-block mb-3"/>
+                                                Pilih menu di sebelah kanan
                                             </div>
                                         </t>
-                                        <t t-else="">
-                                            <small class="text-muted mt-2"><t t-esc="item.stock_qty"/> in stock</small>
+                                        <t t-foreach="state.cart.lines" t-as="line" t-key="line_index">
+                                            <div class="d-flex justify-content-between align-items-center bg-white border rounded p-2 mb-2 shadow-sm">
+                                                <div class="flex-grow-1 me-2">
+                                                    <div class="small fw-bold"><t t-esc="line.name"/></div>
+                                                    <div class="text-muted small">Rp <t t-esc="(line.price || 0).toLocaleString()"/> x <t t-esc="line.qty"/></div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <button class="btn btn-sm btn-outline-secondary p-1 px-2"
+                                                            t-on-click="() => this.decreaseQty(line_index)">-</button>
+                                                    <span class="fw-bold mx-1"><t t-esc="line.qty"/></span>
+                                                    <button class="btn btn-sm btn-outline-secondary p-1 px-2"
+                                                            t-on-click="() => this.increaseQty(line_index)"
+                                                            t-att-disabled="line.qty >= line.max_qty">+</button>
+                                                    <button class="btn btn-sm btn-link text-danger ms-2 p-0"
+                                                            t-on-click="() => this.removeFromCart(line_index)">
+                                                        <i class="fa fa-trash"/>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </t>
-                                        
+                                    </div>
+
+                                    <!-- TOTAL HARGA -->
+                                    <div class="py-3 px-2 mb-3 border-top border-bottom d-flex justify-content-between align-items-center bg-white">
+                                        <span class="fw-bold text-muted">TOTAL PEMBAYARAN</span>
+                                        <span class="fs-4 fw-bold text-success">Rp <t t-esc="totalPrice.toLocaleString()"/></span>
+                                    </div>
+
+                                    <div class="d-grid gap-2 mt-auto">
+                                        <button class="btn btn-success btn-lg fw-bold shadow-sm"
+                                                t-att-disabled="!state.cart.customer_name || state.cart.lines.length === 0"
+                                                t-on-click="submitOrder">
+                                            <i class="fa fa-paper-plane me-2"/>KIRIM PESANAN
+                                        </button>
+                                        <button class="btn btn-light" t-on-click="closeModal">Batal</button>
+                                    </div>
+                                </div>
+
+                                <!-- MENU LIST (RIGHT) -->
+                                <div class="w-60 p-4 overflow-auto bg-light">
+                                    <div class="mb-4">
+                                        <div class="input-group shadow-sm">
+                                            <span class="input-group-text bg-white border-end-0"><i class="fa fa-search text-muted"/></span>
+                                            <input type="text" class="form-control border-start-0 py-2"
+                                                   placeholder="Cari menu kopi atau makanan..." t-model="state.searchQuery"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <t t-foreach="filteredMenuItems" t-as="item" t-key="item.id">
+                                            <div class="col-md-4">
+                                                <div t-attf-class="card h-100 border-0 shadow-sm transition-hover #{item.stock_qty &lt;= 0 ? 'opacity-50 grayscale bg-secondary-subtle' : 'bg-white cursor-pointer'}"
+                                                     t-on-click="() => item.stock_qty > 0 ? this.addToCart(item) : null">
+
+                                                    <div class="card-body p-3 text-center position-relative">
+                                                        <t t-if="item.stock_qty &lt;= 0">
+                                                            <div class="position-absolute top-50 start-50 translate-middle w-100" style="z-index: 10;">
+                                                                <span class="badge bg-danger p-2 shadow">HABIS</span>
+                                                            </div>
+                                                        </t>
+                                                        <div class="mb-2">
+                                                            <i t-attf-class="fa #{item.for_bar ? 'fa-coffee' : 'fa-cutlery'} fa-2x text-primary opacity-25"/>
+                                                        </div>
+                                                        <h6 class="fw-bold mb-1 text-truncate"><t t-esc="item.name"/></h6>
+                                                        <div class="text-primary small fw-bold mb-2">Rp <t t-esc="(item.price || 0).toLocaleString()"/></div>
+
+                                                        <!-- STOCK CONTROL -->
+                                                        <div class="small text-muted border-top pt-2 d-flex align-items-center justify-content-center gap-2">
+                                                            <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, -1)">-</button>
+                                                            <span class="fw-bold" style="min-width: 20px;">Stok: <t t-esc="item.stock_qty"/></span>
+                                                            <button class="btn btn-sm btn-outline-secondary p-0 px-2" t-on-click.stop="() => this.updateStock(item.id, 1)">+</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
                                     </div>
                                 </div>
                             </div>
-                        </t>
+                        </div>
                     </div>
                 </div>
-
-            </div>
+            </t>
         </div>
     </t>
 

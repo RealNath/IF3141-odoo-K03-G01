@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     
+    <!-- 1. DEFINISI ACTIONS -->
     <record id="action_mokopi_kds_dashboard" model="ir.actions.client">
         <field name="name">KDS</field>
-        <field name="tag">mokopi.kds.dashboard_action</field> 
+        <field name="tag">mokopi.kds.dashboard_action</field>
     </record>
 
     <record id="action_mokopi_cashier_dashboard" model="ir.actions.client">
@@ -23,38 +24,50 @@
         <field name="view_mode">tree,form</field>
     </record>
 
+    <!-- 2. DEFINISI MENU -->
+
+    <!-- Root Menu: Dibuat bersih tanpa grup bawaan -->
     <menuitem id="menu_mokopi_root"
               name="Mokopi" 
               sequence="5"/>
 
-    <menuitem id="menu_mokopi_kds_dashboard" 
-              name="KDS" 
+    <!-- Menu KDS: DIPAKSA HANYA UNTUK Kitchen Staff (mokopi.group_kds_kitchen) -->
+    <!-- User Frontoffice (Kasir) TIDAK BOLEH ada di grup ini -->
+    <menuitem id="menu_mokopi_kds_dashboard"
+              name="KDS (Kitchen Display)"
               parent="menu_mokopi_root" 
               action="action_mokopi_kds_dashboard" 
-              sequence="10"/>
+              sequence="10"
+              groups="mokopi.group_kds_kitchen"/>
     
-    <menuitem id="menu_mokopi_cashier_dashboard" 
-              name="Kasir" 
+    <!-- Menu Kasir: DIPAKSA HANYA UNTUK Front Office (mokopi.group_kds_front) -->
+    <menuitem id="menu_mokopi_cashier_dashboard"
+              name="Kasir"
               parent="menu_mokopi_root" 
               action="action_mokopi_cashier_dashboard" 
-              sequence="20"/>
+              sequence="20"
+              groups="mokopi.group_kds_front"/>
 
+    <!-- Menu Manajemen (Hanya untuk Admin/System) -->
     <menuitem id="menu_mokopi_orders"
-              name="Backend Orders"
+              name="Daftar Pesanan Aktif"
               parent="menu_mokopi_root"
               action="action_mokopi_orders"
-              sequence="30"/>
+              sequence="30"
+              groups="base.group_no_one"/>
 
     <menuitem id="menu_mokopi_stock"
-              name="Backend Stock"
+              name="Manajemen Stok"
               parent="menu_mokopi_root"
               action="action_mokopi_stock"
-              sequence="40"/>
+              sequence="40"
+              groups="base.group_system,mokopi.group_kds_supervisor"/>
     
     <menuitem id="menu_mokopi_logs" 
               name="Riwayat Sistem" 
               parent="menu_mokopi_root" 
               action="action_mokopi_order_log" 
-              sequence="50"/>
+              sequence="50"
+              groups="base.group_system,mokopi.group_kds_supervisor"/>
 
 </odoo>
