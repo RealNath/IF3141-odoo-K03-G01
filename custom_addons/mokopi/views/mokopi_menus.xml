@@ -5,13 +5,11 @@
     <record id="action_mokopi_kds_dashboard" model="ir.actions.client">
         <field name="name">KDS</field>
         <field name="tag">mokopi.kds.dashboard_action</field>
-        <field name="groups_id" eval="[(6, 0, [ref('mokopi.group_kds_kitchen')])]"/>
     </record>
 
     <record id="action_mokopi_cashier_dashboard" model="ir.actions.client">
         <field name="name">Kasir</field>
         <field name="tag">mokopi.cashier.dashboard_action</field>
-        <field name="groups_id" eval="[(6, 0, [ref('mokopi.group_kds_front')])]"/>
     </record>
 
     <record id="action_mokopi_orders" model="ir.actions.act_window">

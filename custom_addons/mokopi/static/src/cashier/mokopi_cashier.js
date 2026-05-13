@@ -39,7 +39,7 @@ export class CashierDashboard extends Component {
         // Filter out finished/cancelled/rejected orders
         const orders = await this.orm.searchRead(
             'mokopi.order',
-            [['status', 'not in', ['selesai', 'dibatalkan', 'ditolak']]],
+            [['status', '!=', 'selesai']],
             ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja', 'sequence'],
             { order: 'sequence asc, id asc' }
         );

@@ -7,6 +7,7 @@
     'data': [
         'security/mokopi_kds_security.xml',
         'security/ir.model.access.csv',
+        'views/res_users_views.xml',
         'views/mokopi_stock_views.xml',
         'views/mokopi_order_views.xml',
         'views/mokopi_log_views.xml',

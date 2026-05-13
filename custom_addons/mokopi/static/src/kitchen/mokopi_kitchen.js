@@ -43,7 +43,7 @@ export class KdsDashboard extends Component {
             'mokopi.order',
             [
                 ['for_bar', '=', false],
-                ['status', 'not in', ['selesai', 'dibatalkan', 'ditolak']]
+                ['status', '!=', 'selesai']
             ],
             ['name', 'order_number', 'status', 'line_ids', 'for_bar', 'customer_name', 'no_meja', 'sequence'],
             { order: 'sequence asc, id asc' }

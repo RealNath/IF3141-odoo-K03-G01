@@ -1,32 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="0">
-        <!-- Definisi Kategori Utama Mokopi -->
-        <record id="module_category_mokopi" model="ir.module.category">
-            <field name="name">Mokopi</field>
-            <field name="sequence">10</field>
-            <field name="is_application">True</field>
+    <data>
+
+        <record id="module_category_mokopi_access" model="ir.module.category">
+            <field name="name">Mokopi Access Role</field>
+            <field name="sequence">100</field>
         </record>
 
-        <!-- Role Kasir -->
         <record id="group_kds_front" model="res.groups">
             <field name="name">Kasir</field>
-            <field name="category_id" ref="module_category_mokopi"/>
-            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="category_id" ref="module_category_mokopi_access"/>
         </record>
 
-        <!-- Role Kitchen Staff -->
         <record id="group_kds_kitchen" model="res.groups">
             <field name="name">Kitchen Staff</field>
-            <field name="category_id" ref="module_category_mokopi"/>
-            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="category_id" ref="module_category_mokopi_access"/>
         </record>
 
-        <!-- Role Supervisor -->
         <record id="group_kds_supervisor" model="res.groups">
             <field name="name">Supervisor</field>
-            <field name="category_id" ref="module_category_mokopi"/>
-            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="category_id" ref="module_category_mokopi_access"/>
         </record>
+
     </data>
 </odoo>
