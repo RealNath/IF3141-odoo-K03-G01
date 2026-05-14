@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -24,6 +24,8 @@ export class CashierDashboard extends Component {
         });
 
         this.fsmRules = {};
+        this.pollingInterval = null;
+        this.serverMenuStock = {}; // Cache of server stock quantities by item id
 
         onWillStart(async () => {
             await Promise.all([
@@ -32,6 +34,14 @@ export class CashierDashboard extends Component {
                 this.fetchStatusOptions(),
                 this.fetchFsmRules(),
             ]);
+        });
+
+        onMounted(() => {
+            this.startPolling();
+        });
+
+        onWillUnmount(() => {
+            this.stopPolling();
         });
     }
 
@@ -69,6 +79,26 @@ export class CashierDashboard extends Component {
             [],
             ['name', 'stock_qty', 'for_bar', 'price'],
         );
+        // Cache original server stock for accurate validation
+        this.state.menuItems.forEach(item => {
+            this.serverMenuStock[item.id] = item.stock_qty;
+        });
+        // Reapply cart deductions to preserve local stock validation during order creation
+        this.applyCartDeductions();
+    }
+
+    applyCartDeductions() {
+        // Reduce menu item display stock by quantities currently in cart
+        // Uses cached server stock for accurate validation
+        this.state.menuItems.forEach(item => {
+            const cartLine = this.state.cart.lines.find(line => line.id === item.id);
+            // Start from cached server stock, then reduce by cart quantity
+            let displayStock = this.serverMenuStock[item.id] || 0;
+            if (cartLine) {
+                displayStock = Math.max(0, displayStock - cartLine.qty);
+            }
+            item.stock_qty = displayStock;
+        });
     }
 
     async updateStock(itemId, delta) {
@@ -105,9 +135,8 @@ export class CashierDashboard extends Component {
 
     addToCart(item) {
         const existingLine = this.state.cart.lines.find(line => line.id === item.id);
-        const currentQty = existingLine ? existingLine.qty : 0;
 
-        if (currentQty >= item.stock_qty) {
+        if (item.stock_qty <= 0) {
             this.notification.add(`Maaf, stok ${item.name} habis atau tidak mencukupi.`, { type: 'danger' });
             return;
         }
@@ -125,12 +154,15 @@ export class CashierDashboard extends Component {
                 notes: "",
             });
         }
+
+        this.state.menuItems.find(t => t.id === item.id).stock_qty -= 1;
     }
 
     increaseQty(index) {
         const line = this.state.cart.lines[index];
         if (line.qty < line.max_qty) {
             line.qty += 1;
+            this.state.menuItems.find(t => t.id === line.id).stock_qty += 1;
         } else {
             this.notification.add(`Batas stok tercapai.`, { type: 'warning' });
         }
@@ -140,12 +172,15 @@ export class CashierDashboard extends Component {
         const line = this.state.cart.lines[index];
         if (line.qty > 1) {
             line.qty -= 1;
+            this.state.menuItems.find(t => t.id === line.id).stock_qty += 1;
         } else {
             this.removeFromCart(index);
         }
     }
 
     removeFromCart(index) {
+        const line = this.state.cart.lines[index];
+        this.state.menuItems.find(t => t.id === line.id).stock_qty += line.qty;
         this.state.cart.lines.splice(index, 1);
     }
 
@@ -209,6 +244,25 @@ export class CashierDashboard extends Component {
         }
     }
 
+    startPolling() {
+        // Poll every 5 seconds to check for new orders and stock updates
+        // Menu items are fetched for validation during order creation
+        this.pollingInterval = setInterval(async () => {
+            try {
+                await Promise.all([this.fetchOrders(), this.fetchMenuItems()]);
+            } catch (error) {
+                console.warn('Polling error in cashier dashboard:', error);
+            }
+        }, 1000);
+    }
+
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+    }
+
     getValidOptionsForOrder(order) {
         if (!this.fsmRules || Object.keys(this.fsmRules).length === 0) {
             return [[order.status, order.status]];
@@ -237,6 +291,23 @@ export class CashierDashboard extends Component {
 
     get totalPrice() {
         return this.state.cart.lines.reduce((acc, line) => acc + (line.price * line.qty), 0);
+    }
+
+    getCartLineStock(lineId) {
+        // Return the cached server stock for the item
+        return this.serverMenuStock[lineId] || 0;
+    }
+
+    isCartLineOversold(lineIndex) {
+        // Check if cart line quantity exceeds actual server stock
+        const line = this.state.cart.lines[lineIndex];
+        const serverStock = this.serverMenuStock[line.id] || 0;
+        return line.qty > serverStock;
+    }
+
+    hasOversoldItems() {
+        // Check if any cart items exceed available stock
+        return this.state.cart.lines.some((_, index) => this.isCartLineOversold(index));
     }
 }
 

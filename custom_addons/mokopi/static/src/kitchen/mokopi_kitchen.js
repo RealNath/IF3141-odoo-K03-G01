@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -17,6 +17,7 @@ export class KdsDashboard extends Component {
         });
 
         this.fsmRules = {};
+        this.pollingInterval = null;
 
         onWillStart(async () => {
             await Promise.all([
@@ -25,6 +26,14 @@ export class KdsDashboard extends Component {
                 this.fetchStatusOptions(),
                 this.fetchFsmRules(),
             ]);
+        });
+
+        onMounted(() => {
+            this.startPolling();
+        });
+
+        onWillUnmount(() => {
+            this.stopPolling();
         });
     }
 
@@ -135,6 +144,24 @@ export class KdsDashboard extends Component {
     async updateOrderStatus(orderId, newStatus) {
         await this.orm.write('mokopi.order', [orderId], { status: newStatus });
         await Promise.all([this.fetchOrders(), this.fetchStock()]);
+    }
+
+    startPolling() {
+        // Poll every 5 seconds to check for new orders and stock updates
+        this.pollingInterval = setInterval(async () => {
+            try {
+                await Promise.all([this.fetchOrders(), this.fetchStock()]);
+            } catch (error) {
+                console.warn('Polling error in kitchen dashboard:', error);
+            }
+        }, 1000);
+    }
+
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
     }
 
     getValidOptionsForOrder(order) {

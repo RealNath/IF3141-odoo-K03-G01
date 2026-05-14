@@ -95,7 +95,12 @@
                                             <div class="bg-white border rounded p-2 mb-2 shadow-sm d-flex flex-column">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div class="flex-grow-1 me-2">
-                                                        <div class="small fw-bold"><t t-esc="line.name"/></div>
+                                                        <div t-attf-class="small fw-bold #{isCartLineOversold(line_index) ? 'text-danger' : ''}">    
+                                                            <span t-esc="line.name" t-attf-class="#{isCartLineOversold(line_index) ? 'text-decoration-line-through' : ''}"/>                                                            
+                                                            <t t-if="isCartLineOversold(line_index)">
+                                                                <span> (sisa <t t-esc="getCartLineStock(line.id)"/>)</span>
+                                                            </t>
+                                                        </div>
                                                         <div class="text-muted small">Rp <t t-esc="(line.price || 0).toLocaleString()"/> x <t t-esc="line.qty"/></div>
                                                     </div>
                                                     <div class="d-flex align-items-center gap-2">
@@ -129,7 +134,7 @@
 
                                     <div class="d-grid gap-2 mt-auto">
                                         <button class="btn btn-success btn-lg fw-bold shadow-sm"
-                                                t-att-disabled="!state.cart.customer_name || state.cart.lines.length === 0"
+                                                t-att-disabled="!state.cart.customer_name || state.cart.lines.length === 0 || hasOversoldItems()"
                                                 t-on-click="submitOrder">
                                             <i class="fa fa-paper-plane me-2"/>KIRIM PESANAN
                                         </button>
