@@ -31,8 +31,15 @@
 
                                     <ul class="list-unstyled mb-3 flex-grow-1">
                                         <t t-foreach="order.full_lines" t-as="line" t-key="line.id">
-                                            <li class="mb-1 d-flex justify-content-between">
-                                                <span><strong class="text-primary"><t t-esc="line.quantity"/>x</strong> <t t-esc="line.menu_item_id[1]"/></span>
+                                            <li class="mb-1">
+                                                <div class="d-flex justify-content-between fw-medium">
+                                                    <span><strong class="text-primary"><t t-esc="line.quantity"/>x</strong> <t t-esc="line.menu_item_id[1]"/></span>
+                                                </div>
+                                                <t t-if="line.notes">
+                                                    <div class="text-muted fst-italic" style="font-size: 0.85em;">
+                                                        <t t-esc="line.notes"/>
+                                                    </div>
+                                                </t>
                                             </li>
                                         </t>
                                     </ul>

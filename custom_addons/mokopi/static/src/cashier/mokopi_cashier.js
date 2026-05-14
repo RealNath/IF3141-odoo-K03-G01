@@ -121,7 +121,8 @@ export class CashierDashboard extends Component {
                 qty: 1,
                 price: item.price || 0,
                 for_bar: item.for_bar,
-                max_qty: item.stock_qty
+                max_qty: item.stock_qty,
+                notes: "",
             });
         }
     }
@@ -171,7 +172,7 @@ export class CashierDashboard extends Component {
             ordersToCreate.push({
                 ...commonData,
                 for_bar: true,
-                line_ids: barLines.map(line => [0, 0, { menu_item_id: line.id, quantity: line.qty }])
+                line_ids: barLines.map(line => [0, 0, { menu_item_id: line.id, quantity: line.qty, notes: line.notes }])
             });
         }
 
@@ -179,7 +180,7 @@ export class CashierDashboard extends Component {
             ordersToCreate.push({
                 ...commonData,
                 for_bar: false,
-                line_ids: kitchenLines.map(line => [0, 0, { menu_item_id: line.id, quantity: line.qty }])
+                line_ids: kitchenLines.map(line => [0, 0, { menu_item_id: line.id, quantity: line.qty, notes: line.notes }])
             });
         }
 

@@ -33,8 +33,15 @@
                                     <div class="border-top pt-2 mb-3">
                                         <ul class="list-unstyled small m-0">
                                             <t t-foreach="order.full_lines" t-as="line" t-key="line.id">
-                                                <li class="mb-1 d-flex justify-content-between">
-                                                    <span><t t-esc="line.quantity"/>x <t t-esc="line.menu_item_id[1]"/></span>
+                                                <li class="mb-1">
+                                                    <div class="d-flex justify-content-between fw-medium">
+                                                        <span><t t-esc="line.quantity"/>x <t t-esc="line.menu_item_id[1]"/></span>
+                                                    </div>
+                                                    <t t-if="line.notes">
+                                                        <div class="text-muted fst-italic" style="font-size: 0.85em;">
+                                                            <t t-esc="line.notes"/>
+                                                        </div>
+                                                    </t>
                                                 </li>
                                             </t>
                                         </ul>
@@ -85,22 +92,30 @@
                                             </div>
                                         </t>
                                         <t t-foreach="state.cart.lines" t-as="line" t-key="line_index">
-                                            <div class="d-flex justify-content-between align-items-center bg-white border rounded p-2 mb-2 shadow-sm">
-                                                <div class="flex-grow-1 me-2">
-                                                    <div class="small fw-bold"><t t-esc="line.name"/></div>
-                                                    <div class="text-muted small">Rp <t t-esc="(line.price || 0).toLocaleString()"/> x <t t-esc="line.qty"/></div>
+                                            <div class="bg-white border rounded p-2 mb-2 shadow-sm d-flex flex-column">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="flex-grow-1 me-2">
+                                                        <div class="small fw-bold"><t t-esc="line.name"/></div>
+                                                        <div class="text-muted small">Rp <t t-esc="(line.price || 0).toLocaleString()"/> x <t t-esc="line.qty"/></div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <button class="btn btn-sm btn-outline-secondary p-1 px-2"
+                                                                t-on-click="() => this.decreaseQty(line_index)">-</button>
+                                                        <span class="fw-bold mx-1"><t t-esc="line.qty"/></span>
+                                                        <button class="btn btn-sm btn-outline-secondary p-1 px-2"
+                                                                t-on-click="() => this.increaseQty(line_index)"
+                                                                t-att-disabled="line.qty >= line.max_qty">+</button>
+                                                        <button class="btn btn-sm btn-link text-danger ms-2 p-0"
+                                                                t-on-click="() => this.removeFromCart(line_index)">
+                                                            <i class="fa fa-trash"/>
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <button class="btn btn-sm btn-outline-secondary p-1 px-2"
-                                                            t-on-click="() => this.decreaseQty(line_index)">-</button>
-                                                    <span class="fw-bold mx-1"><t t-esc="line.qty"/></span>
-                                                    <button class="btn btn-sm btn-outline-secondary p-1 px-2"
-                                                            t-on-click="() => this.increaseQty(line_index)"
-                                                            t-att-disabled="line.qty >= line.max_qty">+</button>
-                                                    <button class="btn btn-sm btn-link text-danger ms-2 p-0"
-                                                            t-on-click="() => this.removeFromCart(line_index)">
-                                                        <i class="fa fa-trash"/>
-                                                    </button>
+                                                <div class="mt-1">
+                                                    <input type="text" 
+                                                        class="form-control form-control-sm shadow-none bg-light" 
+                                                        placeholder="Tambahkan catatan (opsional)..." 
+                                                        t-model="line.notes"/>
                                                 </div>
                                             </div>
                                         </t>

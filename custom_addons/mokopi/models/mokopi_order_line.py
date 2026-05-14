@@ -8,7 +8,6 @@ class MokopiOrderLine(models.Model):
     menu_item_id = fields.Many2one('mokopi.stock', string='Menu', required=True)
     quantity = fields.Integer(string='Qty', default=1)
     notes = fields.Char(string='Notes', placeholder='e.g., No onions')
-    #tambahan
     price = fields.Integer(string='Harga Satuan (Rp)', default=0)  
     subtotal = fields.Integer(                                       
         string='Subtotal (Rp)',
