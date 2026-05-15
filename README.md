@@ -1,106 +1,43 @@
-# IF3141 Sistem Informasi - Odoo Setup
+# Mokopi Kitchen Display System
 
-## Introduction
+Perusahaan: Mokopi
 
-Odoo merupakan *Enterprise Resource Planning System* yang mampu melakukan implementasi modul modul kustom untuk menyelesaikan permasalahan proses bisnis pada suatu perusahaan.
+Kelompok: K03 - G01
 
-Odoo memberikan opsi *on-premise solution* sehingga developer dapat melakukan implementasi kustom modul pada local environment.
+Anggota:
+- (13523131) Ahmad Wafi Idzharulhaqq
+- (13523132) Jonathan Levi
+- (13523139) Jonathan Kenan Budianto
+- (13523145) Andri Nurdianto
+- (13523161) Arlow Emmanuel Hergara
 
-Repository ini diperuntukkan untuk Tugas Besar IF3141 Sistem Informasi. Untuk memulai silakan melakukan fork dan membuat repository private untuk workspace setiap kelompok.
+## Deskripsi Sistem
 
+Mokopi Kitchen Display System (KDS) adalah sistem yang diharapkan dapat menjadi sarana komunikasi yang lebih terstruktur bagi Mokopi cabang Jatinangor. Sistem ini menjembatani komunikasi antara divisi Kitchen dan Bar yang sebelumnya masih menggunakan media komunikasi manual (catatan tertulis atau omongan lisan) dalam proses bisnis Mokopi. Implementasi sistem ini di perusahaan Mokopi Jatinangor diharapkan mampu menurunkan jumlah terjadinya *human error* dalam komunikasi antar divisi yang sekarang menjadi salah satu masalah terbesar yang dialami oleh Mokopi Jatinangor. Selain itu, implementasi sistem ini juga diharapkan dapat mempermudah tugas *supervisor* dalam mengawasi kinerja karyawan-karyawan.
 
-## Pre-requisites
-Odoo diimplementasikan dengan Python environment dan database PostgreSQL. Repository ini sudah membungkus service aplikasi dan database melalui Docker.
+Sistem Mokopi KDS dilengkapi dengan 4 layar utama: KDS, Bar Dashboard, Daftar Menu, dan Riwayat Sistem. KDS adalah layar yang diakses oleh divisi kitchen dan memungkinkan mereka untuk mengalokasikan stok untuk makanan serta mengatur status pesanan makanan. Bar Dashboard adalah layar yang diakses oleh divisi bar dan memungkinkan mereka untuk mengirimkan pesanan kepada divisi kitchen serta mengatur status pesanan makanan dan juga minuman. Daftar Menu adalah layar yang diakses oleh *supervisor* untuk mengelola menu yang tersedia di Mokopi Jatinangor. Layar Riwayat Sistem adalah layar tang diakses oleh *supervisor* untuk melihat perubahan yang dibuat oleh karyawan selama bekerja.
 
-Sebelum memulai, pastikan dependency berikut sudah terpasang:
+## Cara Menjalankan
 
-1. Docker Desktop
-	- Download: https://www.docker.com/products/docker-desktop/
-2. Python 3.11
-	- Digunakan untuk virtual environment (venv) pada proses development modul
+1. Jalankan docker compose yang ada di *repository root*
+2. Buka sistem odoo pada localhost:8069
+3. Masuk sebagai admin
+4. Nyalakan module Mokopi
+5. Pindah ke settings > manage users
+6. Tambahkan akun untuk supervisor, kitchen, dan kasir serta berikan role yang sesuai
+7. Pilih ketiga akun yang sudah dibuat dan lakukan aksi "Change Password"
+8. Ubah password untuk masing-masing akun
+9. Logout dari admin dan gunakan akun yang sudah dibuat sebelumnya
+10. Layar-layar Mokopi dapat diakses pada tab Mokopi di dropdown sebelah kiri atas
 
-## Struktur Direktori
+## Kredensial
 
-- `/config`
-	- Untuk menyimpan konfigurasi Odoo
-- `/custom_addons`
-	- Tempat pengerjaan modul kustom
-- `/dump`
-	- Database dump yang dapat diakses scripts untuk proses import/export
-- `/scripts`
-	- Untuk melakukan database migration
-- `docker-compose.yml`
-	- Orchestration service Odoo dan PostgreSQL
+Implementasi kami tidak menyediakan user yang sudah terhubung dengan sistem. Pengguna diekspektasi untuk menambahkan user baru dengan role yang sesuai untuk mengakses sistem. Kredensial bawaan yang ada dalam repository ini hanyalah kredensial admin untuk membuat akun.
 
-## Step-by-step Installation
+Username Admin: admin
 
-1. Jalankan service Odoo dan PostgreSQL:
+Password Admin: admin
 
-	```bash
-	docker compose up -d
-	```
+## Kesimpulan dan Saran
 
-2. Buka aplikasi pada browser:
-	- http://localhost:8069
-
-3. Login menggunakan kredensial default:
-	- Username: `admin`
-	- Password: `admin`
-
-4. Aktifkan mode developer:
-	- Masuk ke **Settings**
-	- Nyalakan **Developer Mode / Developer Access**
-
-5. Buat Python virtual environment pada workspace:
-
-	```bash
-	python3.11 -m venv .venv
-	source .venv/bin/activate
-	pip install --upgrade pip
-	pip install -r requirements.txt
-	```
-
-6. Implementasikan modul pada folder:
-	- `custom_addons/`
-
-7. Setelah implementasi modul selesai, lakukan update daftar aplikasi:
-	- Masuk ke menu **Apps**
-	- Pilih **Update Apps List**
-
-8. Jika melakukan perubahan terhadap isi modul (modifying database), jangan lupa lakukan langkah database migration dengan mengikuti step di heading bawah ini.
-
-## Database Migration
-
-Odoo menggunakan local database pada implementasinya. Maka dari itu dibutuhkan migration system yang dapat dilakukan melakukan **dump db** atau **import db**. Sebelum melakukan migration jangan lupa untuk selalu mematikan service odoo & databasenya dengan menjalankan :
-
-```bash 
-docker compose down
-```
-
-Apabila terdapat perubahan pada database dan perubahan tersebut ingin diteruskan ke anggota tim lain, lakukan export database terlebih dahulu menggunakan script pada folder `scripts`.
-
-- macOS/Linux:
-
-  ```bash
-  ./scripts/export_db.sh
-  ```
-
-- Windows:
-
-  ```bat
-  scripts\export_db.cmd
-  ```
-
-Untuk melanjutkan pengerjaan dari hasil perubahan database rekan tim, lakukan import database terlebih dahulu :
-
-- macOS/Linux:
-
-  ```bash
-  ./scripts/import_db.sh
-  ```
-
-- Windows:
-
-  ```bat
-  scripts\import_db.cmd
-  ```
+Dengan membuat sistem ini, kelompok kami berhasil dalam memberikan solusi untuk salah satu masalah yang menghambat perkembangan Mokopi Jatinangor. Melalui analisis bertahap dan proses desain yang terstruktur, kami mampu menyediakan suatu solusi yang cocok untuk diimplementsikan di perusahaan dalam bentuk KDS khsusus untuk Mokopi. Apabila sistem ini akan diimplementasikan langsung di Mokopi, maka disarankan untuk melakukan instalasi secara lokal untuk meminimalisir dampak dari gangguan koneksi ke internet publik. Apabila sistem ini akan diadaptasi untuk perusahaan lain, disarankan untuk melakukan analisis mendalam untuk membandingkan perusahaan target dengan perusahaan Mokopi cabang Jatinangor.

@@ -1,0 +1,8 @@
+.o_kds_dashboard {
+    height: 100vh; /* Fill the viewport */
+    
+    .overflow-auto {
+        /* Prevents flex items from expanding past their container */
+        min-height: 0; 
+    }
+}
